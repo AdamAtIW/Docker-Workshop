@@ -15,8 +15,9 @@ class Product(Resource):
 			'products': ['Ice cream',
 						'Chocolate',
 						'Fruit',
-						'lollies',
-						'Beer']
+						'Lollies',
+						'Beer',
+						'Whiskey']
 		}
 
 api.add_resource(Product, '/')
