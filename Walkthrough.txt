@@ -1,0 +1,186 @@
+We are gonna run a Product Service on a Web service using Docker-compose to show how we can spin up multiple containers at once and then network them together.
+
+We first want to create a Product-Service in python called api.py which creates a simple restful service. We want to create this in a product directory which will end up having 3 files. api.py ,Dockerfile and Requirements.txt
+
+api.py
+
+#product service
+
+so we are going to need to import flask and flask_restful, and obstantiate these objects
+
+***************Copy*****************************
+
+from flask import Flask
+from flask_restful import Resource, Api
+
+app = Flask(__name__)
+api = Api(app)
+
+************************************************
+we will need to create a requirements.txt to be able to use these dependencies
+
+then we gonna make a quick product class that extrends Resource and is just going to return some JSON
+
+***************Copy*****************************
+
+class Product(Resource):
+	def get(self):
+		return{
+			'products': ['Ice cream',
+						'Chocolate',
+						'Fruit',
+						'Lollies']
+		}
+
+
+***********************************************
+
+add the root 
+
+
+***************Copy*****************************
+
+
+api.add_resource(Product, '/')
+
+
+***********************************************
+
+and some code to run the application, hosting on our local machine and listening on port 80
+
+***************Copy*****************************
+
+if __name__ == '__main__':
+	app.run(host='0.0.0.0', port=80, debug=True)
+
+*************************************************
+
+
+so that completes our Python application which should look like
+
+
+***************api.py*****************************
+
+#product service
+
+
+from flask import Flask
+from flask_restful import Resource, Api
+
+
+app = Flask(__name__)
+api = Api(app)
+
+
+class Product(Resource):
+	def get(self):
+		return{
+			'products': ['Ice cream',
+						'Chocolate',
+						'Fruit',
+						'Lollies']
+		}
+
+api.add_resource(Product, '/')
+
+if __name__ == '__main__':
+	app.run(host='0.0.0.0', port=80, debug=True)
+
+
+*************************************************
+
+We need these requirements to import our dependencies, so need to create a rquirements.txt that will sit alongside out api.py
+
+***************requirements.txt******************
+
+Flask==0.12
+flask-restful==0.3.5
+
+**************************************************
+
+we can now build a Dockerfile which will sit alongside these two files 
+
+so thee first line requires the FROM keyword that specifies a base image so that we can build on top of and we just want to use one of the latest python images  found from https://hub.docker.com/_/python/
+tehse state that they require the requirements.txt.
+
+
+we wabt to copy the current directory to the cointainer /usr/src/app
+
+CMD is telling to run the api.py in python.
+
+***************Dockerfile************************
+
+FROM python:3-onbuild
+COPY . /usr/src/app
+CMD ["python", "api.py"]
+
+
+*************************************************
+
+create a website folder which should be sitting alongside the product folder and also, this is what is going to host our product service.
+
+we are going to write this website using HTML and PHP which is really simple PHP script that is going to just create a list of bullet points of given strings
+
+This is getting the contents from http://product-service our python aplication which would be returning some JSON we are decoding that 
+and then cycling through the list
+*********************index.php***********************
+
+<html>
+	<head>
+		<title> Forklifts Shop </title>
+	</head>
+
+
+	<body>
+		<h1>Welcome to Forklifts Shop</h1>
+		<ul>
+			<?php
+				$json = file_get_contents('http://product-service');
+				$obj = json_decode($json);
+
+				$products = $obj->products;
+				foreach ($products as $product) {
+					echo "<li>$product</li>";
+				}
+			?>
+		</ul>
+	</body>
+</html>
+
+*******************************************************
+
+
+
+so this covers our restful application if we ran this we can expect to see the JSON on on our localmachine browser and also the Website so now we can show how we can spin up together and can communicate between the containers
+
+
+now we want to create a docker-compose.yml in the parent directory from the Dockerfile and Python application
+
+version of the docker-compose file format that we wish to write in .
+
+name the service as product services, name the directory where we are building from.
+where the volumes are being mounted  and what ports they will be listening on the syntax is localmachine_port:container_port
+
+****************docker-compose.yml***********************
+
+version: '3'
+
+services:
+    product-service:
+        build: ./product
+        volumes:
+          - ./product:/usr/src/app
+        ports:
+          - 5001:80
+
+    website:
+        image: php:apache
+        volumes:
+          - ./website:/var/www/html
+        ports:
+          - 5000:80
+        depends_on:
+          - product-service
+
+
+**********************************************************
