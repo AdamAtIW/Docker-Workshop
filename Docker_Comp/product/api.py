@@ -13,11 +13,9 @@ class Product(Resource):
 	def get(self):
 		return{
 			'products': ['Ice cream',
-						'Chocolate',
-						'Fruit',
-						'Lollies',
-						'Beer',
-						'Whiskey']
+				     'Chocolate',
+				     'Fruit',
+				     'Lollies']
 		}
 
 api.add_resource(Product, '/')
